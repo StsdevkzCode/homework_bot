@@ -6,7 +6,7 @@ import time
 from http import HTTPStatus
 
 import pytest
-import requests
+import requests  # type: ignore
 import telebot
 
 import tests.check_utils as check_utils
