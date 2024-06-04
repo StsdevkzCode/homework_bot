@@ -1,3 +1,4 @@
+from http import HTTPStatus
 import logging
 import os
 import sys
@@ -32,7 +33,7 @@ HOMEWORK_VERDICTS = {
     'rejected': 'Работа проверена: у ревьюера есть замечания.',
 }
 
-TEXT = 'Привет, я Телеграм-бот 🤖!'
+TEXT = 'Привет, я Телеграм-бот!'
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -73,15 +74,19 @@ def get_api_answer(timestamp):
     try:
         response = requests.get(ENDPOINT, headers=HEADERS,
                                 params=params, timeout=10)
-        if response.status_code != 200:
-            raise APIRequestError(f'Эндпоинт - {ENDPOINT} недоступен.')
-        logging.info('Запрос к %s с параметрами %s успешен!', ENDPOINT, params)
-        return response.json()
     except requests.RequestException as error:
         logging.error('Ошибка запроса к эндпоинту: %s.', error)
         raise APIRequestError(
             f'Ошибка запроса к {ENDPOINT} c params={params}.'
         ) from error
+
+    if response.status_code != HTTPStatus.OK:
+        logging.error('Эндпоинт %s недоступен, статус код: %s',
+                      ENDPOINT, response.status_code)
+        raise APIRequestError(f'Эндпоинт - {ENDPOINT} недоступен.')
+
+    logging.info('Запрос к %s с параметрами %s успешен!', ENDPOINT, params)
+    return response.json()
 
 
 def check_response(response):
@@ -100,6 +105,8 @@ def check_response(response):
     homeworks = response.get('homeworks')
     if not isinstance(homeworks, list):
         raise TypeError('Значение ключа homeworks не является списком.')
+    if not homeworks:
+        logging.info('Список домашних работ пуст.')
     return homeworks
 
 
